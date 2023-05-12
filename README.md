@@ -21,3 +21,7 @@ And if you want, I would recommend getting a program called LoopBe1 (LoopBeInter
 
 
 Then All you should have to do is launch the program, set your input to your piano and then launch VR Chat, get into the avatar, go into your settings before the expressions menu and turn on OSC then you shuold be good to go!
+
+
+
+Also I recognize that the code is not great :) I am a amateur not professional programmer, but I know enough to make things work at least, if you can make this better then please do and make a suggestion / comment or whatever you do in github, I'm new. 
