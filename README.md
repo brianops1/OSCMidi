@@ -7,6 +7,7 @@ I AM UNSURE IF THIS WORKS ON MAC :)
 The avatars DO NOT MAKE AUDIO, the audio has to come from your mic either through a DAW (Digital Audio Workspace) like FL Studio, Reaper, etc
 
 avtr_f5648902-719f-4193-80b9-8d1581f076b4 - Fresh Pianist, has lightup keys
+
 avtr_2ed21ba8-f484-4fd0-b251-0e53dfe3c9c9 - OSC Piano, has keydown keys and is properly synced with mic audio
 
 Here is everything you will need for this to work:
