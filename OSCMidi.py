@@ -24,10 +24,11 @@ floor = math.floor
 Dimension = (800,600)
 
 
-surface = pygame.display.set_mode(Dimension)
+surface = pygame.display.set_mode(Dimension, pygame.RESIZABLE)
 PortStyle = 1
 ParticleWait = .05
 currentPort = None
+Debug = False
 ParticlesUsed = {"1":False,"2":False,"3":False,"4":False,"5":False,"6":False}
 ParticleZone = []
 MainLoop = True
@@ -48,12 +49,11 @@ def simulate_key(t, note, velocity):
     if not (-15 <= note-36 <= 88):
         return
     index = note - 20
+    if Debug:
+        print("PortStyle: "+str(PortStyle))
     if PortStyle == 1:
-        if Out and t == 176:
-            if velocity == 0:
-                Out.write_short(0xb0, note, 0)
-            else:
-                Out.write_short(0xb0, note, 127)
+        if Out and (t == 176 or t == 186):
+            Out.write_short(0xb0, 64, velocity)
             return
         elif t > 176:
             return
@@ -67,41 +67,20 @@ def simulate_key(t, note, velocity):
             ParticleZone.append(index)
             client.send_message('/avatar/parameters/'+str(index),1)
     elif PortStyle == 2:
-        if Out and t == 176:
-            if velocity == 0:
-                Out.write_short(0xb0, note, 0)
-            else:
-                Out.write_short(0xb0, note, 127)
+        if Out and t == 186:
+            Out.write_short(0xb0, 64, velocity)
             return
-        elif t > 176:
+        if not note:
             return
-        if t == 144:
+        if velocity == 0:
             if Out:
                 Out.note_off(note, velocity, 0)
             client.send_message('/avatar/parameters/'+str(index),0)
-        else:
+        elif velocity >= 1:
             if Out:
                 Out.note_on(note, velocity, 0)
             ParticleZone.append(index)
             client.send_message('/avatar/parameters/'+str(index),1)
-    elif PortStyle == 3:
-        if Out and t == 176:
-            if velocity == 0:
-                Out.write_short(0xb0, note, 0)
-            else:
-                Out.write_short(0xb0, note, 127)
-            return
-        elif t > 176:
-            return
-        if t == 144:
-            if Out:
-                Out.note_off(note, velocity, 0)
-            ParticleZone.append(index)
-            client.send_message('/avatar/parameters/'+str(index),1)
-        elif t == 128:
-            if Out:
-                Out.note_on(note, velocity, 0)
-            client.send_message('/avatar/parameters/'+str(index),0)
 
             
 
@@ -131,14 +110,19 @@ def Main():
             midi_note, timestamp = midi_data[0]
             note_status, keynum, velocity, unused = midi_note
             simulate_key(note_status, keynum, velocity)
+            if Debug:
+                print(midi_data)
         else:
             sleep(.01)
     print("Closed threads, not listening anymore")
 
 def ParticleSend(Wait,Used):
     global ParticleZone,ParticlesUsed
-    client.send_message('/avatar/parameters/P'+str(Used),ParticleZone[0])
-    print(Used,ParticleZone)
+    Note = float("0."+str(ParticleZone[0]))
+    if ParticleZone[0] < 10:
+        Note = float("0.0"+str(ParticleZone[0]))
+    client.send_message('/avatar/parameters/P'+str(Used),Note)
+    print(Used,Note)
     ParticleZone.pop(0)
     sleep(Wait)
     client.send_message('/avatar/parameters/P'+str(Used),0)
@@ -217,13 +201,26 @@ def InitalizePorts():
     Started = False
 
 def SelectPortIn(Val,Num):
-    global currentPort,CurrentPortNum
+    global currentPort,CurrentPortNum,InputPortMenu
+    #Label.set_title("Start OSC Client first")
     if Num > 0:
         CurrentPortNum = Num
         if currentPort != None:
-            InitalizePorts()
+            try:
+                InitalizePorts()
+            except:
+                Label.set_title("Device is currently in use, make sure it's not")
+                InputPortMenu.reset_value()
+                return 
         else:
-            currentPort = pygame.midi.Input(Num)
+            try:
+                currentPort = pygame.midi.Input(Num)
+            except:
+                currentPort = None
+                Label.set_title("Device is currently in use, make sure it's not")
+                InputPortMenu.reset_value()
+                return 
+        Label.set_title("Device is selected for input")
 
 
 def SelectPortOut(Val,Num):
@@ -238,6 +235,7 @@ def SelectPortOut(Val,Num):
         Out = None
         CurrentOutPortNum = None
         InitalizePorts()
+    
         
 def SetPort(Value):
     global Port
@@ -251,10 +249,12 @@ def SetIP(Value):
     IP = Value
 
 def PortStyleChange(Val,Num):
+    global PortStyle
     PortStyle = Num
 
 def Start(Val):
     global Started,client,IP,Port,Label,Start,currentPort,CloseThread
+    StartOSC(True)
     if not client:
         Label.set_title("Start OSC Client first")
         return
@@ -263,12 +263,17 @@ def Start(Val):
         return
     if Started:
         while currentPort.poll():
+            b = pygame.midi.Input.read(currentPort, 1)
             pass
         CloseThread = True
         Start.set_title("Start")
     else:
         CloseThread = False
-        while currentPort.poll():
+        a = 0
+        while currentPort.poll() and a < 50:
+            a += 1
+            b = pygame.midi.Input.read(currentPort, 1)
+            sleep(.01)
             pass
         Start.set_title("Stop")
         Thread(target = ParticleBuffer).start()
@@ -289,29 +294,19 @@ def Particles(Val):
 def PBuff(Val):
     global ParticleWait
     try:
-        ParticleWait = int(Val)
+        ParticleWait = float(Val)
     except:
         ParticleWait = .1
 
 def BufferLimit(Val):
     global NoteLimiter
     NoteLimiter = not NoteLimiter
-        
-#########Initalize Main###########
-        
 
-try:
-    menu = pygame_menu.Menu('OSC Midi', Dimension[0], Dimension[1],
-                       theme=pygame_menu.themes.THEME_DARK)
+def InputRefresh(Val):
+    global ListOfInPorts,ListOfOutPorts,InputPortMenu,OutputPortMenu
+    Label.set_title("Devices Refreshed")
     ListOfInPorts = []
     ListOfOutPorts = [("None",-1)]
-    Port = 9000
-    IP = '127.0.0.1'
-    PortStyle = 1
-    Started = False
-    UseParticles = False
-    CloseThread = False
-    ParticleWait = .1
     for i in range(1,pygame.midi.get_count()):
         try:
             if pygame.midi.get_device_info(i)[2] == 1:
@@ -320,19 +315,75 @@ try:
                 ListOfOutPorts.append((str(pygame.midi.get_device_info(i)[1]),i))
         except Exception as E:
             pass
+    if InputPortMenu and len(ListOfInPorts) > 0:
+        InputPortMenu.update_items(items=ListOfInPorts)
+        OutputPortMenu.update_items(items=ListOfOutPorts)
+        pass
+
+def on_resize():
+    """
+    Function checked if the window is resized.
+    """
+    window_size = surface.get_size()
+    new_w, new_h = window_size[0], window_size[1]
+    menu.resize(new_w, new_h)
+
+def DebugMode(Val):
+    global Debug
+    Debug = not Debug
+
+def BackgroundChecks():
+    global InputPortMenu,OutputPortMenu,ListOfInPorts,ListOfOutPorts
+    LastSize = None
+    while True:
+
+        #Resizing
+        
+        if not LastSize:
+            LastSize = surface.get_size()
+        if LastSize != surface.get_size():
+            on_resize()
+            LastSize = surface.get_size()
+
+
+        sleep(.5)
+        
+
+#########Initalize Main###########
+        
+
+try:
+    menu = pygame_menu.Menu('OSC Midi', Dimension[0], Dimension[1],
+                       theme=pygame_menu.themes.THEME_DARK)
     Label = menu.add.label('', max_char=-1, font_size=20)
-    menu.add.dropselect(title='Input :', items=ListOfInPorts,
+    
+    ListOfInPorts = []
+    ListOfOutPorts = [("None",-1)]
+    InputPortMenu = None
+    OutputPortMenu = None
+    Port = 9000
+    IP = '127.0.0.1'
+    Started = False
+    UseParticles = False
+    CloseThread = False
+    InputRefresh(1)
+    ParticleWait = .1
+    InputPortMenu = menu.add.dropselect(title='Input :', items=ListOfInPorts,
                         selection_box_width=round(Dimension[0]/2),selection_box_height=5, onchange=SelectPortIn)
-    menu.add.dropselect(title='Output :', items=ListOfOutPorts,
+    OutputPortMenu = menu.add.dropselect(title='Output :', items=ListOfOutPorts,
                         selection_box_width=round(Dimension[0]/2),selection_box_height=5, onchange=SelectPortOut)
-    menu.add.text_input('Set Port: ', default='9000', onreturn=SetPort)
-    menu.add.text_input('Set IP: ', default='127.0.0.1', onreturn=SetIP)
-    menu.add.selector('Port Style : ', items=[('1',1),('2',2),('3',3)], onchange=PortStyleChange)
+
+#Need to add a settings menu to put port, ip, port style, and particles into
+    
+    #menu.add.text_input('Set Port: ', default='9000', onreturn=SetPort)
+    #menu.add.text_input('Set IP: ', default='127.0.0.1', onreturn=SetIP)
+    menu.add.selector('Port Style : ', items=[('1',1),('2',2)], onchange=PortStyleChange)
     menu.add.toggle_switch('Send Particle Paramaters', False, onchange=Particles)
+    menu.add.toggle_switch('Toggle Debug Mode', False, onchange=DebugMode)
     menu.add.toggle_switch('Particle Buffer Limit (16)', False, onchange=BufferLimit)
     menu.add.text_input('Particle Buffer: ', default='.1', onreturn=PBuff)
-    menu.add.button('Start OSC Connection (Can only do once)', StartOSC, 'foo')
     Start = menu.add.button('Start', Start, 'foo')
+    Thread(target = BackgroundChecks).start()
     menu.mainloop(surface)
 except Exception as E:
     print('\n\n')
