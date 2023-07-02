@@ -27,13 +27,25 @@ pip install pygame
 
 pip install pygame_menu
 
-And if you want, I would recommend getting a program called LoopBe1 (LoopBeInternalMidi)
+And a program called LoopBe1 (LoopBeInternalMidi)
+- This you will need to look up online and download
 
 -----------------------------------
 
-Then All you should have to do is launch the program, set your input to your piano and then launch VR Chat, get into the avatar, go into your settings before the expressions menu and turn on OSC then you shuold be good to go!
+Once you have everything all installed, follow these steps
 
------------------------------------
+- Launch the OSC Midi program
+- Set your input to the piano you are using
+- Set your output to loopbe
+- Hit start
+- Set your midi input of the DAW to Loopbe
+- Hit some keys and it SHOULD be working, if not re read or make a comment
+- Launch VR Chat
+- Get into the avatar
+- Go into setting before the expressions menu and turn on OSC in tools
+- Then go into expressions and make sure that you have the piano animation enabled
+- Now when you play you should see the animation playing
+
 -----------------------------------
 
 Also I recognize that the code is not great :) I am a amateur not professional programmer, but I know enough to make things work at least, if you can make this better then please do and make a suggestion / comment or whatever you do in github, I'm new. 
