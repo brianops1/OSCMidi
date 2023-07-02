@@ -34,11 +34,12 @@ And a program called LoopBe1 (LoopBeInternalMidi)
 
 Once you have everything all installed, follow these steps
 
+- Read above and make sure everything is installed correctly
 - Launch the OSC Midi program
-- Set your input to the piano you are using
+- Set your input to the piano you are using (Will give a message if it didn't work right)
 - Set your output to loopbe
 - Hit start
-- Set your midi input of the DAW to Loopbe
+- Set your midi input of your DAW to Loopbe
 - Hit some keys and it SHOULD be working, if not re read or make a comment
 - Launch VR Chat
 - Get into the avatar
