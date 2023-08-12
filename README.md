@@ -43,7 +43,7 @@ Once you have everything all installed, follow these steps
 - Set your output to loopbe
 - Hit start
 - Set your midi input of your DAW to Loopbe
-- Hit some keys and it SHOULD be working, if not re-read, check "bug check" section, or make a comment
+- Hit some keys and it SHOULD be working, if not re-read above, check "bug check" section, or make a comment
 - Launch VR Chat
 - Get into the avatar
 - Go into setting before the expressions menu and turn on OSC in tools
