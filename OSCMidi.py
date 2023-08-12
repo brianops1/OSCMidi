@@ -4,6 +4,9 @@
 #pip install pygame_menu
 
 
+#Need to do:
+# - Add saving for settings
+
 import math,re,os
 from threading import Thread
 from time import sleep
@@ -38,7 +41,6 @@ CurrentOutPortNum = None
 CurrentPortNum = None
 NoteLimiter = False
 PressedKeys = {}
-
 client = None
 
 # functions
@@ -67,16 +69,16 @@ def simulate_key(t, note, velocity):
             ParticleZone.append(index)
             client.send_message('/avatar/parameters/'+str(index),1)
     elif PortStyle == 2:
-        if Out and t == 186:
+        if Out and (t == 176 or t == 186):
             Out.write_short(0xb0, 64, velocity)
             return
         if not note:
             return
-        if velocity == 0:
+        if t == 128:
             if Out:
                 Out.note_off(note, velocity, 0)
             client.send_message('/avatar/parameters/'+str(index),0)
-        elif velocity >= 1:
+        elif t == 144:
             if Out:
                 Out.note_on(note, velocity, 0)
             ParticleZone.append(index)
@@ -347,15 +349,19 @@ def BackgroundChecks():
 
 
         sleep(.5)
-        
+
 
 #########Initalize Main###########
         
 
 try:
+    ParticleWait = .1
+    UseParticles = False
+
     menu = pygame_menu.Menu('OSC Midi', Dimension[0], Dimension[1],
                        theme=pygame_menu.themes.THEME_DARK)
     Label = menu.add.label('', max_char=-1, font_size=20)
+
     
     ListOfInPorts = []
     ListOfOutPorts = [("None",-1)]
@@ -364,10 +370,8 @@ try:
     Port = 9000
     IP = '127.0.0.1'
     Started = False
-    UseParticles = False
     CloseThread = False
     InputRefresh(1)
-    ParticleWait = .1
     InputPortMenu = menu.add.dropselect(title='Input :', items=ListOfInPorts,
                         selection_box_width=round(Dimension[0]/2),selection_box_height=5, onchange=SelectPortIn)
     OutputPortMenu = menu.add.dropselect(title='Output :', items=ListOfOutPorts,
@@ -382,6 +386,7 @@ try:
     menu.add.toggle_switch('Toggle Debug Mode', False, onchange=DebugMode)
     menu.add.toggle_switch('Particle Buffer Limit (16)', False, onchange=BufferLimit)
     menu.add.text_input('Particle Buffer: ', default='.1', onreturn=PBuff)
+    Start = menu.add.button('Save', Save, 'foo')
     Start = menu.add.button('Start', Start, 'foo')
     Thread(target = BackgroundChecks).start()
     menu.mainloop(surface)
