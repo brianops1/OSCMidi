@@ -4,9 +4,6 @@
 #pip install pygame_menu
 
 
-#Need to do:
-# - Add saving for settings
-
 import math,re,os
 from threading import Thread
 from time import sleep
@@ -386,7 +383,6 @@ try:
     menu.add.toggle_switch('Toggle Debug Mode', False, onchange=DebugMode)
     menu.add.toggle_switch('Particle Buffer Limit (16)', False, onchange=BufferLimit)
     menu.add.text_input('Particle Buffer: ', default='.1', onreturn=PBuff)
-    Start = menu.add.button('Save', Save, 'foo')
     Start = menu.add.button('Start', Start, 'foo')
     Thread(target = BackgroundChecks).start()
     menu.mainloop(surface)
