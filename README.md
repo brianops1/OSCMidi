@@ -1,7 +1,5 @@
 # OSCMidi
 
-Currently a semi-placeholder until I can make this stuff pretty.
-
 I AM UNSURE IF THIS WORKS ON MAC :)
 
 The avatars DO NOT MAKE AUDIO, the audio has to come from your mic or through a DAW (Digital Audio Workspace) like FL Studio, Reaper, etc
@@ -23,6 +21,7 @@ avtr_2ed21ba8-f484-4fd0-b251-0e53dfe3c9c9 - OSC Piano, has keydown keys and is p
 Python
 
 pip install python-osc
+(you would enter this into a cmd prompt, might be easier to look up "pip install")
 
 pip install pygame
 
