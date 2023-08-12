@@ -20,8 +20,9 @@ avtr_2ed21ba8-f484-4fd0-b251-0e53dfe3c9c9 - OSC Piano, has keydown keys and is p
 
 Python
 
+(you would enter these into a cmd prompt, might be easier to look up "pip install")
+
 pip install python-osc
-(you would enter this into a cmd prompt, might be easier to look up "pip install")
 
 pip install pygame
 
