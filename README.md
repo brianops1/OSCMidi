@@ -8,6 +8,8 @@ The avatars DO NOT MAKE AUDIO, the audio has to come from your mic or through a 
 
 In order to import these you need to use VRCX (look it up if you don't know what it is)
 
+avtr_9afe6649-5eef-487d-84bf-237ac039d1ca - Finalized (no avatar), the most recent avatar that I was working on. Has everything you should need
+
 avtr_f5648902-719f-4193-80b9-8d1581f076b4 - Fresh Pianist, has lightup keys
 
 avtr_2ed21ba8-f484-4fd0-b251-0e53dfe3c9c9 - OSC Piano, has keydown keys and is properly synced with mic audio
