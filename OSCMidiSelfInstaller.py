@@ -64,18 +64,36 @@ CurrentPortNum = None
 NoteLimiter = False
 PressedKeys = {}
 client = None
+DownKeyStatus = 0
+UpKeyStatus = 0
 
-# functions
+### Main functions ###
 
 
 def simulate_key(t, note, velocity):
-    global Out,ParticleZone,PortStyle,client
+    global Out,ParticleZone,PortStyle,client,DownKeyStatus,UpKeyStatus
     if not (-15 <= note-36 <= 88):
         return
     index = note - 20
     if Debug:
         print("PortStyle: "+str(PortStyle))
     if PortStyle == 1:
+        if Out and (t == 176 or t == 186):
+            Out.write_short(0xb0, 64, velocity)
+            return
+        elif t > 176:
+            return
+        if t == DownKeyStatus and velocity > 0:
+            if Out:
+                Out.note_on(note, velocity, 0)
+            ParticleZone.append(index)
+            client.send_message('/avatar/parameters/'+str(index),1)
+        elif t == UpKeyStatus:
+            if Out:
+                Out.note_off(note, velocity, 0)
+            client.send_message('/avatar/parameters/'+str(index),0)
+        
+    elif PortStyle == 2:
         if Out and (t == 176 or t == 186):
             Out.write_short(0xb0, 64, velocity)
             return
@@ -90,7 +108,7 @@ def simulate_key(t, note, velocity):
                 Out.note_on(note, velocity, 0)
             ParticleZone.append(index)
             client.send_message('/avatar/parameters/'+str(index),1)
-    elif PortStyle == 2:
+    elif PortStyle == 3:
         if Out and (t == 176 or t == 186):
             Out.write_short(0xb0, 64, velocity)
             return
@@ -106,28 +124,14 @@ def simulate_key(t, note, velocity):
             ParticleZone.append(index)
             client.send_message('/avatar/parameters/'+str(index),1)
 
-            
 
-
-def parse_midi(message):
-    global sustainToggle
-    if message.type == 'control_change' and SavableSettings["sustainEnabled"]:
-        if not sustainToggle and message.value > SavableSettings["sustainCutoff"]:
-            sustainToggle = True
-            press('space')
-        elif sustainToggle and message.value < SavableSettings["sustainCutoff"]:
-            sustainToggle = False
-            release('space')
-    elif (message.type == 'note_on' or message.type == 'note_off'):
-        if message.velocity == 0:
-            simulate_key('note_off', message.note, message.velocity)
-        else:
-            simulate_key(message.type, message.note, message.velocity)
 
 
 def Main():
     global CloseThread,menu
-    print("Now listening to note events on "+str(currentPort)+"...")
+    while UpKeyStatus == 0 or DownKeyStatus == 0:
+        sleep(.05)
+    print("Now listening to note events on "+str(currentPort))
     while not CloseThread:
         if pygame.midi.Input.poll(currentPort):
             midi_data = pygame.midi.Input.read(currentPort, 1)
@@ -160,7 +164,7 @@ def ParticleBuffer():
     Next = 1
     while not CloseThread:
         if not UseParticles:
-            sleep(.1)
+            sleep(1)
             ParticleZone = []
         else:
             sleep(.01)
@@ -276,6 +280,43 @@ def PortStyleChange(Val,Num):
     global PortStyle
     PortStyle = Num
 
+def AutoFindStatus():
+    global Label,UpKeyStatus,DownKeyStatus,currentPort
+    Port = currentPort
+    Waiting = True
+    print("Please press 1 piano key and hold it")
+    Label.set_title("Please press 1 piano key and hold it")
+    Stat = None
+    while Waiting:
+        sleep(.01)
+        if pygame.midi.Input.poll(Port):
+            midi_data = pygame.midi.Input.read(Port, 1)
+            midi_note, timestamp = midi_data[0]
+            note_status, keynum, velocity, unused = midi_note
+            Stat = note_status
+            Waiting = False
+        
+
+    DownKeyStatus = Stat
+
+    Waiting = True
+    print("Now, please release that key")
+    Label.set_title("Now, please release that key")
+    while Waiting:
+        sleep(.02)
+        if pygame.midi.Input.poll(Port):
+            midi_data = pygame.midi.Input.read(Port, 1)
+            midi_note, timestamp = midi_data[0]
+            note_status, keynum, velocity, unused = midi_note
+            Stat = note_status
+            Waiting = False
+    UpKeyStatus = Stat
+    Label.set_title("Finished Automatic tuning for your piano!")
+    print("Finished Automatic tuning for your piano!\n\n"+str(UpKeyStatus)+"\n"+str(DownKeyStatus))
+    
+    
+   
+
 def Start(Val):
     global Started,client,IP,Port,Label,Start,currentPort,CloseThread
     StartOSC(True)
@@ -294,11 +335,16 @@ def Start(Val):
     else:
         CloseThread = False
         a = 0
-        while currentPort.poll() and a < 50:
+        while currentPort.poll() or a >= 5000:
             a += 1
             b = pygame.midi.Input.read(currentPort, 1)
-            sleep(.01)
-            pass
+            if a%50 >= 1:
+                sleep(.05)
+
+        #Addition 2/20/25 | Adding on / off auto detection
+        Thread(target = AutoFindStatus).start()
+        
+        
         Start.set_title("Stop")
         Thread(target = ParticleBuffer).start()
         Thread(target = Main).start()
@@ -308,7 +354,6 @@ def Start(Val):
 def StartOSC(Val):
     global IP,Port,client,Label
     if client == None:
-        Label.set_title("Set client")
         client = udp_client.SimpleUDPClient(IP, Port)
 
 def Particles(Val):
@@ -403,7 +448,7 @@ try:
     
     #menu.add.text_input('Set Port: ', default='9000', onreturn=SetPort)
     #menu.add.text_input('Set IP: ', default='127.0.0.1', onreturn=SetIP)
-    menu.add.selector('Port Style : ', items=[('1',1),('2',2)], onchange=PortStyleChange)
+    menu.add.selector('Port Style : ', items=[('1',1),('2',2),('3',3)], onchange=PortStyleChange)
     menu.add.toggle_switch('Send Particle Paramaters', False, onchange=Particles)
     menu.add.toggle_switch('Toggle Debug Mode', False, onchange=DebugMode)
     menu.add.toggle_switch('Particle Buffer Limit (16)', False, onchange=BufferLimit)
