@@ -282,6 +282,8 @@ def PortStyleChange(Val,Num):
 
 def AutoFindStatus():
     global Label,UpKeyStatus,DownKeyStatus,currentPort
+    DownKeyStatus = 0
+    UpKeyStatus = 0
     Port = currentPort
     Waiting = True
     print("Please press 1 piano key and hold it")
