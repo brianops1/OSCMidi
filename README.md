@@ -1,6 +1,6 @@
 # OSCMidi
 
-The avatars DO NOT MAKE AUDIO, the audio has to come from your mic or through a DAW (Digital Audio Workspace) like FL Studio, Reaper, etc
+The avatars DO NOT MAKE AUDIO, the audio has to come from your mic or through a DAW (Digital Audio Workspace) like FL Studio, Reaper, PianoTeq, etc
 
 -----------------------------------
 
